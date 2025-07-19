@@ -1,0 +1,17 @@
+{
+  "name": "GlowHorn Journal",
+  "short_name": "GlowHorn",
+  "description": "A cozy, gamified self-care journal with a unicorn AI avatar.",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#fcdff6",
+  "theme_color": "#cffafe",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "unicorn.svg",
+      "type": "image/svg+xml",
+      "sizes": "120x120"
+    }
+  ]
+}
