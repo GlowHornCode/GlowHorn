@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GlowHorn Journal - Unicorn Glow</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="unicorn.svg">
+  <style>
+    body {
+      font-family: 'Quicksand', 'Comic Sans MS', cursive, sans-serif;
+      background: linear-gradient(135deg, #fcdff6 0%, #cffafe 100%);
+      color: #7c44fa;
+      padding: 2rem;
+      min-height: 100vh;
+    }
+    .journal-container {
+      background: #fff8fc;
+      border-radius: 24px;
+      box-shadow: 0 8px 24px #d5b6f6cc;
+      padding: 2rem;
+      max-width: 400px;
+      margin: 2rem auto;
+      text-align: center;
+      position: relative;
+    }
+    .unicorn-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+    .unicorn-avatar {
+      width: 120px;
+      height: 120px;
+      filter: drop-shadow(0 0 0px #ffb7eb) drop-shadow(0 0 0px #84f3ff);
+      transition: filter 0.25s;
+    }
+    .unicorn-avatar.glow {
+      animation: unicorn-glow 1.6s ease-out 1;
+    }
+    @keyframes unicorn-glow {
+      0% {
+        filter: drop-shadow(0 0 0px #ffb7eb) drop-shadow(0 0 0px #84f3ff);
+      }
+      25% {
+        filter: drop-shadow(0 0 32px #ffb7eb) drop-shadow(0 0 32px #84f3ff);
+      }
+      50% {
+        filter: drop-shadow(0 0 52px #ffb7eb) drop-shadow(0 0 52px #84f3ff);
+      }
+      75% {
+        filter: drop-shadow(0 0 32px #ffb7eb) drop-shadow(0 0 32px #84f3ff);
+      }
+      100% {
+        filter: drop-shadow(0 0 0px #ffb7eb) drop-shadow(0 0 0px #84f3ff);
+      }
+    }
+    .encourage-message {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #ff6cbe;
+      background: linear-gradient(90deg, #fcdff6 0%, #cffafe 100%);
+      border-radius: 10px;
+      padding: 0.7em 1em;
+      margin-top: 1em;
+      box-shadow: 0 2px 8px #d5b6f6cc;
+      display: none;
+      animation: fadeInMsg 1s ease-in;
+    }
+    @keyframes fadeInMsg {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    textarea {
+      width: 100%;
+      min-height: 100px;
+      border: 2px solid #e1cfff;
+      border-radius: 12px;
+      padding: 1rem;
+      font-size: 1rem;
+      background: #f9f7fd;
+      color: #7c44fa;
+      resize: vertical;
+    }
+    button {
+      background: linear-gradient(90deg, #fcdff6 0%, #cffafe 100%);
+      color: #7c44fa;
+      border: none;
+      border-radius: 12px;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      margin-top: 1rem;
+      cursor: pointer;
+      box-shadow: 0 2px 8px #d5b6f6cc;
+      transition: box-shadow 0.2s;
+    }
+    button:hover {
+      box-shadow: 0 4px 12px #c3a3f6cc;
+    }
+    .emotion-result {
+      margin-top: 1.5rem;
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #ff6cbe;
+      text-shadow: 0 0 6px #ffeaf6;
+      background: #ffeaf6;
+      border-radius: 8px;
+      padding: 0.5rem;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <div class="journal-container">
+    <div class="unicorn-wrapper">
+      <img src="unicorn.svg" alt="Unicorn Avatar" class="unicorn-avatar" id="unicornAvatar">
+      <div id="encourageMsg" class="encourage-message"></div>
+    </div>
+    <h2>🦄 GlowHorn Journal</h2>
+    <form id="journalForm">
+      <textarea id="journalEntry" placeholder="What's on your mind today?"></textarea>
+      <button type="submit">Reflect & Analyze</button>
+    </form>
+    <div id="emotionResult" class="emotion-result" style="display:none;"></div>
+  </div>
+  <script>
+    // Register service worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js')
+          .then(reg => console.log('Service Worker registered', reg))
+          .catch(err => console.error('SW registration failed', err));
+      });
+    }
+
+    // Encouraging messages array
+    const encouragements = [
+      "You’re magical! Thanks for sharing your thoughts 🌈",
+      "Your feelings are valid and you’re doing great! 🦄",
+      "Glow on, brave soul — journaling is self-care ✨",
+      "You’re growing with every word you write! 💖",
+      "Your unicorn believes in you! 🦄✨"
+    ];
+
+    document.getElementById("journalForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const entry = document.getElementById("journalEntry").value.trim();
+      const unicorn = document.getElementById("unicornAvatar");
+      const encourageMsg = document.getElementById("encourageMsg");
+      const resultDiv = document.getElementById("emotionResult");
+
+      resultDiv.style.display = "none";
+      resultDiv.textContent = "";
+
+      if (!entry) {
+        resultDiv.textContent = "Please write something to reflect on!";
+        resultDiv.style.display = "inline-block";
+        encourageMsg.style.display = "none";
+        return;
+      }
+
+      // Animate unicorn glow
+      unicorn.classList.remove("glow");
+      void unicorn.offsetWidth;
+      unicorn.classList.add("glow");
+
+      // Show random encouragement message
+      const msg = encouragements[Math.floor(Math.random() * encouragements.length)];
+      encourageMsg.textContent = msg;
+      encourageMsg.style.display = "block";
+      encourageMsg.style.opacity = "1";
+
+      <a href="UnicornJournalWithGlow.html">Glow Journal</a>
+                                                            
+    });
+  </script>
+</body>
+</html>
