@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GlowHorn Habit Tracker</title>
+  <style>
+    body {
+      font-family: 'Quicksand', 'Comic Sans MS', cursive, sans-serif;
+      background: linear-gradient(135deg, #fcdff6 0%, #cffafe 100%);
+      color: #7c44fa;
+      padding: 2rem;
+      min-height: 100vh;
+    }
+    .tracker-container {
+      background: #fff8fc;
+      border-radius: 24px;
+      box-shadow: 0 8px 24px #d5b6f6cc;
+      padding: 2rem;
+      max-width: 400px;
+      margin: 2rem auto;
+    }
+    .habit-list {
+      margin-bottom: 1rem;
+    }
+    .habit-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      font-size: 1.1rem;
+    }
+    .habit-item input[type="checkbox"] {
+      accent-color: #ff6cbe;
+      margin-right: 0.5rem;
+      width: 1.2em;
+      height: 1.2em;
+    }
+    #addHabitForm {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    #addHabitInput {
+      flex: 1;
+      border: 2px solid #e1cfff;
+      border-radius: 8px;
+      padding: 0.5rem;
+      font-size: 1rem;
+      background: #f9f7fd;
+      color: #7c44fa;
+    }
+    #addHabitBtn {
+      background: linear-gradient(90deg, #fcdff6 0%, #cffafe 100%);
+      color: #7c44fa;
+      border: none;
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: box-shadow 0.2s;
+      box-shadow: 0 2px 8px #d5b6f6cc;
+    }
+    #addHabitBtn:hover {
+      box-shadow: 0 4px 12px #c3a3f6cc;
+    }
+    .xp-bar-container {
+      margin-top: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .xp-label {
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin-bottom: 0.3rem;
+      color: #ff6cbe;
+      text-shadow: 0 0 6px #ffeaf6;
+    }
+    .xp-bar-bg {
+      background: #ffeaf6;
+      border-radius: 12px;
+      height: 24px;
+      width: 100%;
+      overflow: hidden;
+      box-shadow: 0 2px 8px #d5b6f6cc;
+      margin-bottom: 0.4rem;
+    }
+    .xp-bar-fill {
+      background: linear-gradient(90deg, #ffb7eb 0%, #84f3ff 100%);
+      height: 100%;
+      transition: width 0.3s;
+      border-radius: 12px;
+      width: 0%;
+    }
+    .streak-info {
+      font-size: 1rem;
+      color: #7c44fa;
+      background: #f7f3ff;
+      border-radius: 8px;
+      padding: 0.5rem;
+      margin-top: 0.5rem;
+      text-align: center;
+    }
+    .remove-btn {
+      margin-left: auto;
+      background: #ffeaf6;
+      color: #ff6cbe;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      padding: 0.2rem 0.6rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .remove-btn:hover {
+      background: #ffb7eb;
+    }
+  </style>
+</head>
+<body>
+  <div class="tracker-container">
+    <h2>🌈 GlowHorn Habit Tracker</h2>
+    <form id="addHabitForm">
+      <input type="text" id="addHabitInput" placeholder="Add a magical habit..." />
+      <button id="addHabitBtn" type="submit">Add</button>
+    </form>
+    <div class="habit-list" id="habitList"></div>
+    <div class="xp-bar-container">
+      <div class="xp-label">XP Progress</div>
+      <div class="xp-bar-bg">
+        <div class="xp-bar-fill" id="xpBar"></div>
+      </div>
+      <div class="streak-info" id="streakInfo"></div>
+    </div>
+  </div>
+  <script>
+    // Habit Tracker MVP logic
+    const XP_PER_HABIT = 10;
+    const XP_TO_LEVEL_UP = 100;
+    const LOCAL_KEY = "GHabits";
+    const STREAK_KEY = "GStreaks";
+    const XP_KEY = "GXP";
+    const DATE_KEY = "GDate";
+
+    // Helpers to load/save habits, streaks, xp
+    function saveHabits(habits) {
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(habits));
+    }
+    function loadHabits() {
+      return JSON.parse(localStorage.getItem(LOCAL_KEY) || "[]");
+    }
+    function saveStreaks(streaks) {
+      localStorage.setItem(STREAK_KEY, JSON.stringify(streaks));
+    }
+    function loadStreaks() {
+      return JSON.parse(localStorage.getItem(STREAK_KEY) || "{}");
+    }
+    function saveXP(xp) {
+      localStorage.setItem(XP_KEY, xp);
+    }
+    function loadXP() {
+      return parseInt(localStorage.getItem(XP_KEY) || "0");
+    }
+    function saveDate(dateStr) {
+      localStorage.setItem(DATE_KEY, dateStr);
+    }
+    function loadDate() {
+      return localStorage.getItem(DATE_KEY) || "";
+    }
+
+    // Main app state
+    let habits = loadHabits();
+    let streaks = loadStreaks();
+    let xp = loadXP();
+    let lastDate = loadDate();
+
+    // Utility: get today's date string
+    function getToday() {
+      return new Date().toISOString().slice(0,10);
+    }
+
+    // Handle streaks: reset if missed a day
+    function updateStreaksOnLoad() {
+      const today = getToday();
+      if (lastDate && lastDate !== today) {
+        // Missed a day, reset unchecked habits' streak
+        habits.forEach(habit => {
+          if (!habit.checked) streaks[habit.id] = 0;
+        });
+        // Uncheck all habits for new day
+        habits.forEach(habit => habit.checked = false);
+        saveStreaks(streaks);
+        saveHabits(habits);
+      }
+      saveDate(today);
+    }
+
+    // Render habits
+    function renderHabits() {
+      const habitList = document.getElementById("habitList");
+      habitList.innerHTML = "";
+      habits.forEach((habit, idx) => {
+        const div = document.createElement("div");
+        div.className = "habit-item";
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = !!habit.checked;
+        cb.addEventListener("change", () => handleHabitCheck(idx, cb.checked));
+        div.appendChild(cb);
+
+        const span = document.createElement("span");
+        span.textContent = habit.name;
+        div.appendChild(span);
+
+        const streakSpan = document.createElement("span");
+        streakSpan.style.marginLeft = "0.5em";
+        streakSpan.style.color = "#ff6cbe";
+        streakSpan.style.fontWeight = "bold";
+        streakSpan.textContent = `🔥${streaks[habit.id] || 0}`;
+        div.appendChild(streakSpan);
+
+        const removeBtn = document.createElement("button");
+        removeBtn.textContent = "✖";
+        removeBtn.className = "remove-btn";
+        removeBtn.onclick = () => removeHabit(idx);
+        div.appendChild(removeBtn);
+
+        habitList.appendChild(div);
+      });
+    }
+
+    // Handle checking a habit for today
+    function handleHabitCheck(idx, checked) {
+      const habit = habits[idx];
+      habit.checked = checked;
+      if (checked) {
+        // Only increment streak & XP if not already checked today
+        if (!streaks[habit.id]) streaks[habit.id] = 0;
+        streaks[habit.id]++;
+        xp += XP_PER_HABIT;
+        saveXP(xp);
+        saveStreaks(streaks);
+      } else {
+        // Unchecking today does NOT reset streak, but don't add XP
+        // (optional: you can reset streak here if desired)
+      }
+      saveHabits(habits);
+      renderHabits();
+      renderXP();
+    }
+
+    // Add a new habit
+    document.getElementById("addHabitForm").addEventListener("submit", function(e){
+      e.preventDefault();
+      const input = document.getElementById("addHabitInput");
+      const name = input.value.trim();
+      if (!name) return;
+      const id = name.replace(/\s+/g, "_") + "_" + Date.now();
+      habits.push({name, id, checked: false});
+      streaks[id] = 0;
+      saveHabits(habits);
+      saveStreaks(streaks);
+      input.value = "";
+      renderHabits();
+      renderXP();
+    });
+
+    // Remove a habit
+    function removeHabit(idx) {
+      const habit = habits[idx];
+      delete streaks[habit.id];
+      habits.splice(idx, 1);
+      saveHabits(habits);
+      saveStreaks(streaks);
+      renderHabits();
+      renderXP();
+    }
+
+    // XP progress bar & streak info
+    function renderXP() {
+      const bar = document.getElementById("xpBar");
+      const streakInfo = document.getElementById("streakInfo");
+      let percent = ((xp % XP_TO_LEVEL_UP) / XP_TO_LEVEL_UP) * 100;
+      bar.style.width = percent + "%";
+      bar.textContent = `${xp % XP_TO_LEVEL_UP} / ${XP_TO_LEVEL_UP} XP`;
+      const longestStreak = Math.max(0, ...Object.values(streaks));
+      streakInfo.textContent = `Longest Streak: ${longestStreak} days | Total XP: ${xp}`;
+    }
+
+    // On load, update streaks if missed a day, then render
+    updateStreaksOnLoad();
+    renderHabits();
+    renderXP();
+  </script>
+</body>
+</html>
