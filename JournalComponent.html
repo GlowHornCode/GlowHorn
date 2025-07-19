@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GlowHorn Journal</title>
+  <style>
+    body {
+      font-family: 'Quicksand', 'Comic Sans MS', cursive, sans-serif;
+      background: linear-gradient(135deg, #fcdff6 0%, #cffafe 100%);
+      color: #7c44fa;
+      padding: 2rem;
+      min-height: 100vh;
+    }
+    .journal-container {
+      background: #fff8fc;
+      border-radius: 24px;
+      box-shadow: 0 8px 24px #d5b6f6cc;
+      padding: 2rem;
+      max-width: 400px;
+      margin: 2rem auto;
+    }
+    textarea {
+      width: 100%;
+      min-height: 100px;
+      border: 2px solid #e1cfff;
+      border-radius: 12px;
+      padding: 1rem;
+      font-size: 1rem;
+      background: #f9f7fd;
+      color: #7c44fa;
+      resize: vertical;
+    }
+    button {
+      background: linear-gradient(90deg, #fcdff6 0%, #cffafe 100%);
+      color: #7c44fa;
+      border: none;
+      border-radius: 12px;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      margin-top: 1rem;
+      cursor: pointer;
+      box-shadow: 0 2px 8px #d5b6f6cc;
+      transition: box-shadow 0.2s;
+    }
+    button:hover {
+      box-shadow: 0 4px 12px #c3a3f6cc;
+    }
+    .emotion-result {
+      margin-top: 1.5rem;
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #ff6cbe;
+      text-shadow: 0 0 6px #ffeaf6;
+      background: #ffeaf6;
+      border-radius: 8px;
+      padding: 0.5rem;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <div class="journal-container">
+    <h2>🦄 GlowHorn Journal</h2>
+    <form id="journalForm">
+      <textarea id="journalEntry" placeholder="What's on your mind today?"></textarea>
+      <button type="submit">Reflect & Analyze</button>
+    </form>
+    <div id="emotionResult" class="emotion-result" style="display:none;"></div>
+  </div>
+
+  <script>
+    async function analyzeEmotion(text) {
+      const HF_API_URL = "https://api-inference.huggingface.co/models/j-hartmann/emotion-english-distilroberta-base";
+      const HF_API_TOKEN = "YOUR_HF_API_TOKEN"; // <-- Replace with your Hugging Face token
+
+      const response = await fetch(HF_API_URL, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${HF_API_TOKEN}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({inputs: text})
+      });
+
+      if (!response.ok) {
+        throw new Error("Emotion analysis failed.");
+      }
+      const result = await response.json();
+      // result is an array of emotions with scores, sort and pick the top one
+      if (Array.isArray(result) && result.length > 0) {
+        const emotion = result[0][0].label;
+        return emotion;
+      }
+      throw new Error("Could not analyze emotion.");
+    }
+
+    document.getElementById("journalForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const entry = document.getElementById("journalEntry").value.trim();
+      const resultDiv = document.getElementById("emotionResult");
+
+      resultDiv.style.display = "none";
+      resultDiv.textContent = "";
+
+      if (!entry) {
+        resultDiv.textContent = "Please write something to reflect on!";
+        resultDiv.style.display = "inline-block";
+        return;
+      }
+
+      resultDiv.textContent = "Analyzing your unicorn vibes... ✨";
+      resultDiv.style.display = "inline-block";
+
+      try {
+        const emotion = await analyzeEmotion(entry);
+        resultDiv.textContent = `Your journal entry feels: ${emotion} 🌈`;
+      } catch (err) {
+        resultDiv.textContent = "Sorry, couldn't analyze emotion. Try again!";
+      }
+    });
+  </script>
+</body>
+</html>
